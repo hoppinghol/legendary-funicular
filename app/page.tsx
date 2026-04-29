@@ -26,8 +26,27 @@ export default function Home() {
         fullUrl = `https://${url}`;
       }
 
-      // In a real implementation, this would call the Novita API
-      // For now, we'll simulate the response
+      // Simulate downloading the webpage content
+      // In a real implementation, this would involve:
+      // 1. Making a server-side request to fetch the URL content
+      // 2. Extracting the text content from the HTML
+      // 3. Sending that content to the Novita API
+      
+      // For demo purposes, we'll simulate the downloaded content
+      const mockContent = `
+        <html>
+        <head><title>Sample Page</title></head>
+        <body>
+          <h1>Welcome to our Technology Blog</h1>
+          <p>This page discusses artificial intelligence, machine learning, and software development.</p>
+          <p>We cover topics like neural networks, deep learning algorithms, and programming frameworks.</p>
+          <p>Our articles are written by experts in the field of computer science and technology.</p>
+        </body>
+        </html>
+      `;
+
+      // In a real implementation, you would send mockContent to Novita API
+      // For now, we'll simulate the API response
       const mockResponse = {
         classification: "Technology",
         confidence: 95,
@@ -74,7 +93,7 @@ export default function Home() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="example.com or https://example.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-600"
               />
             </div>
             
