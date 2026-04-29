@@ -73,7 +73,6 @@ export default function Home() {
       }
 
       // Use the classification result from Novita API
-      // Direct assignment instead of setTimeout to avoid rendering issues
       setResult(data.classificationResult);
     } catch (err) {
       setError('Failed to analyze the page. Please try again.');
@@ -159,20 +158,24 @@ export default function Home() {
                 
                 <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
                   <h3 className="text-xs font-semibold text-purple-800 uppercase tracking-wide mb-1">Factors</h3>
-                  <p className="text-lg font-bold text-gray-900">{result.factors.length}</p>
+                  <p className="text-lg font-bold text-gray-900">{result.factors ? result.factors.length : 0}</p>
                 </div>
               </div>
               
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Factors</h3>
-                <ul className="space-y-2">
-                  {result.factors.map((factor: string, index: number) => (
-                    <li key={index} className="flex items-start">
-                      <span className="flex-shrink-0 h-4 w-4 text-blue-500 mt-0.5">•</span>
-                      <p className="ml-2 text-gray-700 text-sm">{factor}</p>
-                    </li>
-                  ))}
-                </ul>
+                {result.factors ? (
+                  <ul className="space-y-2">
+                    {result.factors.map((factor: string, index: number) => (
+                      <li key={index} className="flex items-start">
+                        <span className="flex-shrink-0 h-4 w-4 text-blue-500 mt-0.5">•</span>
+                        <p className="ml-2 text-gray-700 text-sm">{factor}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500">No factors available</p>
+                )}
               </div>
               
               <div className="pt-4 border-t border-gray-200">
