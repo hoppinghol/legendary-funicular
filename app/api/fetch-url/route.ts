@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
       });
       
       if (!fetchResponse.ok) {
+        // Log the error and HTTP code to command line
+        console.error(`Failed to retrieve page content: ${fetchResponse.status} ${fetchResponse.statusText} for URL: ${fullUrl}`);
+        
         // Return the actual HTTP error message from the page retrieval
         return NextResponse.json({ 
           error: `Failed to retrieve page content: ${fetchResponse.status} ${fetchResponse.statusText}` 
@@ -37,6 +40,9 @@ export async function POST(request: NextRequest) {
       
       htmlContent = await fetchResponse.text();
     } catch (fetchError) {
+      // Log the error to command line
+      console.error(`Failed to retrieve page content: ${fetchError.message || 'Unknown error'} for URL: ${fullUrl}`);
+      
       // Return the actual error message from the page retrieval
       return NextResponse.json({ 
         error: `Failed to retrieve page content: ${fetchError.message || 'Unknown error'}` 
