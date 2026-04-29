@@ -12,6 +12,7 @@ export default function Home() {
   const [extractedText, setExtractedText] = useState('');
   const [metaData, setMetaData] = useState<any>(null);
   const [llmResponse, setLlmResponse] = useState('');
+  const [llmStats, setLlmStats] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +27,7 @@ export default function Home() {
     setExtractedText('');
     setMetaData(null);
     setLlmResponse('');
+    setLlmStats(null);
 
     try {
       // Prepend https:// if not present
@@ -57,6 +59,18 @@ export default function Home() {
       setExtractedText(data.text);
       setMetaData(data.metaData);
       setLlmResponse(data.llmResponse);
+      
+      // Extract stats from the LLM response if available
+      if (data.llmResponse) {
+        // Parse the response to extract stats
+        const stats = {
+          model: data.model || 'zai-org/glm-4.7-flash',
+          responseTime: data.response_time || 'N/A',
+          promptTokens: data.usage?.prompt_tokens || 'N/A',
+          reasoningTokens: data.usage?.reasoning_tokens || 'N/A'
+        };
+        setLlmStats(stats);
+      }
 
       // Use the classification result from Novita API
       setResult(data.classificationResult);
@@ -190,6 +204,35 @@ export default function Home() {
             
             {showDebug && (
               <div className="mt-4 space-y-6 border-t border-gray-200 pt-6">
+                {/* LLM Stats Table */}
+                {llmStats && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Statistics</h3>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          <tr>
+                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Model</td>
+                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.model}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Response Time</td>
+                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.responseTime}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Prompt Tokens</td>
+                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.promptTokens}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Reasoning Tokens</td>
+                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.reasoningTokens}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Prompt sent to LLM:</h3>
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">

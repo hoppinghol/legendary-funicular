@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     let classificationResult;
     try {
       // Try to parse the response as JSON
-      classificationResult = JSON.parse(completion.choices[0].message.reasoning_content); // chng to reasoning_content
+      classificationResult = JSON.parse(completion.choices[0].message.content);
     } catch (parseError) {
       // If parsing fails, use a fallback structure
       classificationResult = {
@@ -90,7 +90,10 @@ export async function POST(request: NextRequest) {
       text: prompt, // This will be shown in debug mode as the prompt
       metaData: {},
       classificationResult: classificationResult,
-      llmResponse: completion.choices[0].message.reasoning_content // Add the raw LLM response; changed to reasoning_content - jw
+      llmResponse: completion.choices[0].message.content, // Add the raw LLM response
+      model: completion.model,
+      response_time: completion.created ? `${Date.now() - completion.created * 1000}ms` : 'N/A',
+      usage: completion.usage
     });
   } catch (error) {
     console.error('Error fetching URL or calling Novita API:', error);
