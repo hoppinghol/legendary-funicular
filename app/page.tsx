@@ -8,7 +8,7 @@ export default function Home() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [debugMode, setDebugMode] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   const [extractedText, setExtractedText] = useState('');
   const [metaData, setMetaData] = useState<any>(null);
   const [llmResponse, setLlmResponse] = useState('');
@@ -169,52 +169,57 @@ export default function Home() {
           </div>
         )}
 
-        {/* Debug section */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <div className="flex items-center mb-4">
-            <input
-              type="checkbox"
-              id="debugMode"
-              checked={debugMode}
-              onChange={(e) => setDebugMode(e.target.checked)}
-              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="debugMode" className="text-sm font-medium text-gray-700">
-              Show debug information
-            </label>
-          </div>
-          
-          {debugMode && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Prompt sent to LLM:</h3>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
-                  <pre className="text-sm text-gray-800 whitespace-pre-wrap">{extractedText}</pre>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Response:</h3>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
-                  <ReactMarkdown className="text-sm text-gray-800">
-                    {llmResponse}
-                  </ReactMarkdown>
-                </div>
-              </div>
-              
-              {metaData && Object.keys(metaData).length > 0 && (
+        {/* Debug section - hidden by default, shown when chevron is clicked */}
+        {result && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mt-6">
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="flex items-center text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              <svg 
+                className={`w-5 h-5 transition-transform duration-200 ${showDebug ? 'rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+              <span className="ml-2 text-sm font-medium">Show debug information</span>
+            </button>
+            
+            {showDebug && (
+              <div className="mt-4 space-y-6 border-t border-gray-200 pt-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Meta Data Extracted:</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <pre className="text-sm text-gray-800">
-                      {JSON.stringify(metaData, null, 2)}
-                    </pre>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Prompt sent to LLM:</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                    <pre className="text-sm text-gray-800 whitespace-pre-wrap">{extractedText}</pre>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+                
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Response:</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                    <ReactMarkdown className="text-sm text-gray-800">
+                      {llmResponse}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+                
+                {metaData && Object.keys(metaData).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Meta Data Extracted:</h3>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <pre className="text-sm text-gray-800">
+                        {JSON.stringify(metaData, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
