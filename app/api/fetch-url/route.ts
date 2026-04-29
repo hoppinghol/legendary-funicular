@@ -17,20 +17,28 @@ export async function POST(request: NextRequest) {
     }
     
     // Make actual web request to fetch the page content
-    const fetchResponse = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      },
-      redirect: 'follow',
-      timeout: 10000 // 10 second timeout
-    });
-    
-    if (!fetchResponse.ok) {
-      throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+    let htmlContent;
+    try {
+      const fetchResponse = await fetch(fullUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        },
+        redirect: 'follow',
+        timeout: 10000 // 10 second timeout
+      });
+      
+      if (!fetchResponse.ok) {
+        throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+      }
+      
+      htmlContent = await fetchResponse.text();
+    } catch (fetchError) {
+      // Return error response for web page retrieval issues
+      return NextResponse.json({ 
+        error: `Failed to retrieve page content: ${fetchError.message || 'Unknown error'}` 
+      }, { status: 500 });
     }
-    
-    const htmlContent = await fetchResponse.text();
     
     // Extract text content from HTML using regex (Node.js compatible)
     // Remove script and style tags
@@ -358,11 +366,11 @@ export async function POST(request: NextRequest) {
       usage: completion.usage
     });
   } catch (error) {
-    console.error('Error fetching URL or calling LLM:', error);
+    console.error('Error in fetch-url API:', error);
     
-    // Return error response instead of mock data
+    // Return error response for general errors
     return NextResponse.json({ 
-      error: `Failed to retrieve page content: ${error.message || 'Unknown error'}` 
+      error: `Failed to process request: ${error.message || 'Unknown error'}` 
     }, { status: 500 });
   }
 }
