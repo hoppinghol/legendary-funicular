@@ -16,12 +16,49 @@ export async function POST(request: NextRequest) {
       fullUrl = `https://${url}`;
     }
     
-    // In a real implementation, this would fetch the actual URL content
-    // For now, we'll use the URL directly in the prompt
-    // In a production environment, you would:
-    // 1. Make an HTTP request to fetch the actual URL content
-    // 2. Extract text content from the HTML
-    // 3. Pass that content to the LLM
+    // Make actual web request to fetch the page content
+    const fetchResponse = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      redirect: 'follow',
+      timeout: 10000 // 10 second timeout
+    });
+    
+    if (!fetchResponse.ok) {
+      throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+    }
+    
+    const htmlContent = await fetchResponse.text();
+    
+    // Extract text content from HTML
+    // Create a temporary DOM element to parse the HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    // Remove script and style elements
+    doc.querySelectorAll('script, style').forEach(el => el.remove());
+    
+    // Extract text content
+    let textContent = doc.body.textContent || doc.body.innerText || '';
+    
+    // Clean up text content
+    textContent = textContent.replace(/\s+/g, ' ').trim();
+    
+    // Extract meta data
+    const metaTags: any = {};
+    const metaElements = doc.querySelectorAll('meta');
+    metaElements.forEach(element => {
+      const name = element.getAttribute('name') || element.getAttribute('property');
+      const content = element.getAttribute('content');
+      if (name && content) {
+        metaTags[name] = content;
+      }
+    });
+    
+    // Get page title
+    const pageTitle = doc.title;
     
     // Call local LLM API
     const openai = new OpenAI({
@@ -30,10 +67,10 @@ export async function POST(request: NextRequest) {
     });
     
     // Prepare the exact prompt as specified in the requirements
-    // Removed "Page content:" as it's redundant
-    const prompt = `RETURN ONLY A JSON OBJECT WITH THESE EXACT KEYS: CLASSIFICATION, CONFIDENCE, AND FACTORS\n\nRetrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. The factors should be a list of exactly 3 items explaining why the classification was made\n3. The confidence should be a percentage value`;
+    // Include the actual HTML content in the prompt
+    const prompt = `RETURN ONLY A JSON OBJECT WITH THESE EXACT KEYS: CLASSIFICATION, CONFIDENCE, AND FACTORS\n\nRetrieve and analyze the content of the web page at: ${fullUrl}\n\nPage Title: ${pageTitle}\n\nPage Content:\n${textContent}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. The factors should be a list of exactly 3 items explaining why the classification was made\n3. The confidence should be a percentage value`;
     
-    // Debug: Print what will be sent to Novita (this is what gets submitted to LLM)
+    // Debug: Print what will be sent to LLM
     console.log('=== Prompt sent to LLM ===');
     console.log(prompt);
     console.log('==================================');
@@ -113,7 +150,7 @@ export async function POST(request: NextRequest) {
     // Return the response data that will be used by the frontend
     return NextResponse.json({
       text: prompt, // This will be shown in debug mode as the prompt
-      metaData: {},
+      metaData: metaTags,
       classificationResult: classificationResult,
       llmResponse: messageContent, // Add the raw LLM response
       model: completion.model,
