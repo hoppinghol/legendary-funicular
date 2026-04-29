@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function Home() {
   const [url, setUrl] = useState('');
@@ -31,71 +31,29 @@ export default function Home() {
         fullUrl = `https://${url}`;
       }
 
-      // Simulate downloading the webpage content
-      // In a real implementation, this would involve:
-      // 1. Making a server-side request to fetch the URL content
-      // 2. Extracting the text content from the HTML
-      // 3. Extracting meta data
-      // 4. Sending that content to the Novita API
-      
-      // For demo purposes, we'll simulate the downloaded content
-      const mockHtmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Sample Technology Blog</title>
-          <meta name="description" content="A blog about technology, AI, and software development">
-          <meta name="keywords" content="AI, machine learning, programming, software">
-          <meta name="author" content="Tech Writer">
-          <meta property="og:title" content="Technology Blog">
-          <meta property="og:description" content="Exploring the latest in technology and software development">
-          <meta property="og:url" content="${fullUrl}">
-        </head>
-        <body>
-          <h1>Welcome to our Technology Blog</h1>
-          <p>This page discusses artificial intelligence, machine learning, and software development.</p>
-          <p>We cover topics like neural networks, deep learning algorithms, and programming frameworks.</p>
-          <p>Our articles are written by experts in the field of computer science and technology.</p>
-          <div class="content">
-            <h2>Latest Articles</h2>
-            <p>Recent developments in AI research include breakthroughs in natural language processing.</p>
-            <p>Software engineers are increasingly adopting agile methodologies for faster development cycles.</p>
-          </div>
-        </body>
-        </html>
-      `;
-
-      // Extract text content from HTML (simplified approach)
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = mockHtmlContent;
-      
-      // Remove script and style elements
-      tempDiv.querySelectorAll('script, style').forEach(el => el.remove());
-      
-      // Get text content
-      const textContent = tempDiv.textContent || tempDiv.innerText || '';
-      
-      // Extract meta data
-      const metaTags: any = {};
-      const metaElements = tempDiv.querySelectorAll('meta');
-      metaElements.forEach(element => {
-        const name = element.getAttribute('name') || element.getAttribute('property');
-        const content = element.getAttribute('content');
-        if (name && content) {
-          metaTags[name] = content;
-        }
+      // Make request to our API endpoint to fetch and process the URL
+      const response = await fetch('/api/fetch-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: fullUrl }),
       });
-      
-      // Clean up extracted text
-      const cleanedText = textContent
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 2000); // Limit to 2000 characters
-      
-      setExtractedText(cleanedText);
-      setMetaData(metaTags);
 
-      // In a real implementation, you would send cleanedText to Novita API
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setExtractedText(data.text);
+      setMetaData(data.metaData);
+
+      // In a real implementation, you would send data.text to Novita API
       // For now, we'll simulate the API response
       const mockResponse = {
         classification: "Technology",
