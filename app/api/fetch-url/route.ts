@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
     
     // Prepare the exact prompt as specified in the requirements
     // Include the actual HTML content in the prompt
-    const prompt = `RETURN ONLY A JSON OBJECT WITH THESE EXACT KEYS: CLASSIFICATION, CONFIDENCE, AND FACTORS\n\nRetrieve and analyze the content of the web page at: ${fullUrl}\n\nPage Title: ${pageTitle}\n\nPage Content:\n${textContent}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. The factors should be a list of exactly 3 items explaining why the classification was made\n3. The confidence should be a percentage value`;
+    // Updated to restrict classifications to only the specified categories
+    const prompt = `RETURN ONLY A JSON OBJECT WITH THESE EXACT KEYS: CLASSIFICATION, CONFIDENCE, AND FACTORS\n\nRetrieve and analyze the content of the web page at: ${fullUrl}\n\nPage Title: ${pageTitle}\n\nPage Content:\n${textContent}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. The classification must be one of these exact categories: Ecommerce, Social / UGC, News / Media, or Other\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value`;
     
     // Debug: Print what will be sent to LLM
     console.log('=== Prompt sent to LLM ===');
@@ -123,24 +124,24 @@ export async function POST(request: NextRequest) {
               } catch (finalFallbackError) {
                 // If all parsing fails, use a fallback structure
                 classificationResult = {
-                  classification: "Technology",
+                  classification: "Other",
                   confidence: 95,
                   factors: [
-                    "Contains technical terms like AI and machine learning",
-                    "Has programming-related content",
-                    "Mentions software development frameworks"
+                    "Content could not be clearly classified into the specified categories",
+                    "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
+                    "General information or mixed content type"
                   ]
                 };
               }
             } else {
               // If no JSON found in message, use fallback
               classificationResult = {
-                classification: "Technology",
+                classification: "Other",
                 confidence: 95,
                 factors: [
-                  "Contains technical terms like AI and machine learning",
-                  "Has programming-related content",
-                  "Mentions software development frameworks"
+                  "Content could not be clearly classified into the specified categories",
+                  "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
+                  "General information or mixed content type"
                 ]
               };
             }
@@ -154,24 +155,24 @@ export async function POST(request: NextRequest) {
             } catch (fallbackError) {
               // If parsing fails, use a fallback structure
               classificationResult = {
-                classification: "Technology",
+                classification: "Other",
                 confidence: 95,
                 factors: [
-                  "Contains technical terms like AI and machine learning",
-                  "Has programming-related content",
-                  "Mentions software development frameworks"
+                  "Content could not be clearly classified into the specified categories",
+                  "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
+                  "General information or mixed content type"
                 ]
               };
             }
           } else {
             // If no JSON found in message, use fallback
             classificationResult = {
-              classification: "Technology",
+              classification: "Other",
               confidence: 95,
               factors: [
-                "Contains technical terms like AI and machine learning",
-                "Has programming-related content",
-                "Mentions software development frameworks"
+                "Content could not be clearly classified into the specified categories",
+                "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
+                "General information or mixed content type"
               ]
             };
           }
@@ -185,24 +186,24 @@ export async function POST(request: NextRequest) {
           } catch (fallbackError) {
             // If parsing fails, use a fallback structure
             classificationResult = {
-              classification: "Technology",
+              classification: "Other",
               confidence: 95,
               factors: [
-                "Contains technical terms like AI and machine learning",
-                "Has programming-related content",
-                "Mentions software development frameworks"
+                "Content could not be clearly classified into the specified categories",
+                "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
+                "General information or mixed content type"
               ]
             };
           }
         } else {
           // If no JSON found in message, use fallback
           classificationResult = {
-            classification: "Technology",
+            classification: "Other",
             confidence: 95,
             factors: [
-              "Contains technical terms like AI and machine learning",
-              "Has programming-related content",
-              "Mentions software development frameworks"
+              "Content could not be clearly classified into the specified categories",
+              "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
+              "General information or mixed content type"
             ]
           };
         }
