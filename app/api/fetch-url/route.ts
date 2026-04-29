@@ -43,32 +43,27 @@ export async function POST(request: NextRequest) {
       </html>
     `;
     
-    // Extract text content from HTML using DOMParser (server-side compatible)
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(mockHtmlContent, 'text/html');
+    // Simple HTML text extraction without DOMParser
+    // Remove script and style tags
+    let cleanHtml = mockHtmlContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    cleanHtml = cleanHtml.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
     
-    // Remove script and style elements
-    doc.querySelectorAll('script, style').forEach(el => el.remove());
-    
-    // Get text content
-    const textContent = doc.body.textContent || doc.body.innerText || '';
+    // Extract text content
+    let textContent = cleanHtml.replace(/<[^>]+>/g, ' ');
+    textContent = textContent.replace(/\s+/g, ' ').trim();
     
     // Extract meta data
     const metaTags: any = {};
-    const metaElements = doc.querySelectorAll('meta');
-    metaElements.forEach(element => {
-      const name = element.getAttribute('name') || element.getAttribute('property');
-      const content = element.getAttribute('content');
-      if (name && content) {
-        metaTags[name] = content;
-      }
-    });
+    const metaRegex = /<meta[^>]+(?:name|property)=["']([^"']*)["'][^>]+content=["']([^"']*)["']/gi;
+    let match;
+    while ((match = metaRegex.exec(mockHtmlContent)) !== null) {
+      const name = match[1];
+      const content = match[2];
+      metaTags[name] = content;
+    }
     
     // Clean up extracted text
-    const cleanedText = textContent
-      .replace(/\s+/g, ' ')
-      .trim()
-      .substring(0, 2000); // Limit to 2000 characters
+    const cleanedText = textContent.substring(0, 2000); // Limit to 2000 characters
     
     return NextResponse.json({
       text: cleanedText,
