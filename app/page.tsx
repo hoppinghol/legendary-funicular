@@ -474,8 +474,8 @@ export default function Home() {
                   {metaData && Object.keys(metaData).length > 0 && (
                     <div>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Meta Data Extracted:</h3>
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <pre className="text-sm text-gray-800">
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                        <pre className="text-sm text-gray-800 whitespace-pre-wrap">
                           {JSON.stringify(metaData, null, 2)}
                         </pre>
                       </div>
