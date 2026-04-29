@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
     
     // In a real implementation, this would fetch the actual URL
-    // For now, we'll simulate the behavior
+    // For now, we'll simulate the behavior with a mock HTML string
     const mockHtmlContent = `
       <!DOCTYPE html>
       <html>
@@ -43,19 +43,19 @@ export async function POST(request: NextRequest) {
       </html>
     `;
     
-    // Extract text content from HTML (simplified approach)
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = mockHtmlContent;
+    // Extract text content from HTML using DOMParser (server-side compatible)
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(mockHtmlContent, 'text/html');
     
     // Remove script and style elements
-    tempDiv.querySelectorAll('script, style').forEach(el => el.remove());
+    doc.querySelectorAll('script, style').forEach(el => el.remove());
     
     // Get text content
-    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    const textContent = doc.body.textContent || doc.body.innerText || '';
     
     // Extract meta data
     const metaTags: any = {};
-    const metaElements = tempDiv.querySelectorAll('meta');
+    const metaElements = doc.querySelectorAll('meta');
     metaElements.forEach(element => {
       const name = element.getAttribute('name') || element.getAttribute('property');
       const content = element.getAttribute('content');
