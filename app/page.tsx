@@ -183,7 +183,7 @@ export default function Home() {
           {debugMode && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Text to be submitted to LLM:</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Prompt sent to LLM:</h3>
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
                   <pre className="text-sm text-gray-800 whitespace-pre-wrap">{extractedText}</pre>
                 </div>
