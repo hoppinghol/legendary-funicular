@@ -10,6 +10,7 @@ export default function Home() {
   const [debugMode, setDebugMode] = useState(false);
   const [extractedText, setExtractedText] = useState('');
   const [metaData, setMetaData] = useState<any>(null);
+  const [llmResponse, setLlmResponse] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +24,7 @@ export default function Home() {
     setResult(null);
     setExtractedText('');
     setMetaData(null);
+    setLlmResponse('');
 
     try {
       // Prepend https:// if not present
@@ -53,6 +55,7 @@ export default function Home() {
       // Store the extracted text and metadata for debug display
       setExtractedText(data.text);
       setMetaData(data.metaData);
+      setLlmResponse(data.llmResponse);
 
       // Use the classification result from Novita API
       setResult(data.classificationResult);
@@ -186,6 +189,13 @@ export default function Home() {
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Prompt sent to LLM:</h3>
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
                   <pre className="text-sm text-gray-800 whitespace-pre-wrap">{extractedText}</pre>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Raw Response:</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                  <pre className="text-sm text-gray-800 whitespace-pre-wrap">{llmResponse}</pre>
                 </div>
               </div>
               

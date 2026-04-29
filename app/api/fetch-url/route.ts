@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
     });
     
     // Prepare the exact prompt as specified in the requirements
-    const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value\n\nPage content:\n`;
+    // Removed "Page content:" as it's redundant
+    const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value`;
     
     // Debug: Print what will be sent to Novita (this is what gets submitted to LLM)
     console.log('=== Prompt sent to Novita API ===');
@@ -86,9 +87,10 @@ export async function POST(request: NextRequest) {
     
     // Return the response data that will be used by the frontend
     return NextResponse.json({
-      text: prompt, // This will be shown in debug mode
+      text: prompt, // This will be shown in debug mode as the prompt
       metaData: {},
-      classificationResult: classificationResult
+      classificationResult: classificationResult,
+      llmResponse: completion.choices[0].message.content // Add the raw LLM response
     });
   } catch (error) {
     console.error('Error fetching URL or calling Novita API:', error);
