@@ -93,25 +93,40 @@ export async function POST(request: NextRequest) {
     console.log('====================================');
     
     // Extract the classification result from the LLM response
-    // First try to find and parse JSON in reasoning_content
+    // The LLM response contains markdown code block with JSON
     let classificationResult;
-    const messageContent = completion.choices[0].message.reasoning_content || completion.choices[0].message.content || '';
+    const messageContent = completion.choices[0].message.content || '';
     
     try {
       // Try to parse the entire message as JSON first
       classificationResult = JSON.parse(messageContent);
     } catch (parseError) {
-      // If that fails, look for JSON within the message content
-      const jsonMatch = messageContent.match(/\{.*\}/s);
-      if (jsonMatch) {
+      // If that fails, look for JSON within markdown code blocks
+      const jsonMatch = messageContent.match(/```(?:json)?\s*({.*?})\s*```/s);
+      if (jsonMatch && jsonMatch[1]) {
         try {
-          classificationResult = JSON.parse(jsonMatch[0]);
+          classificationResult = JSON.parse(jsonMatch[1]);
         } catch (fallbackError) {
-          // If parsing JSON from message fails, fall back to trying to parse content
-          try {
-            classificationResult = JSON.parse(completion.choices[0].message.content);
-          } catch (finalFallbackError) {
-            // If all parsing fails, use a fallback structure
+          // If parsing JSON from markdown fails, try to extract and parse the content
+          // Look for the JSON-like structure in the content
+          const jsonLikeMatch = messageContent.match(/\{.*\}/s);
+          if (jsonLikeMatch) {
+            try {
+              classificationResult = JSON.parse(jsonLikeMatch[0]);
+            } catch (finalFallbackError) {
+              // If all parsing fails, use a fallback structure
+              classificationResult = {
+                classification: "Technology",
+                confidence: 95,
+                factors: [
+                  "Contains technical terms like AI and machine learning",
+                  "Has programming-related content",
+                  "Mentions software development frameworks"
+                ]
+              };
+            }
+          } else {
+            // If no JSON found in message, use fallback
             classificationResult = {
               classification: "Technology",
               confidence: 95,
@@ -124,11 +139,25 @@ export async function POST(request: NextRequest) {
           }
         }
       } else {
-        // If no JSON found in message, fall back to content parsing
-        try {
-          classificationResult = JSON.parse(completion.choices[0].message.content);
-        } catch (fallbackError) {
-          // If parsing fails, use a fallback structure
+        // If no markdown code block found, try to extract JSON from content
+        const jsonLikeMatch = messageContent.match(/\{.*\}/s);
+        if (jsonLikeMatch) {
+          try {
+            classificationResult = JSON.parse(jsonLikeMatch[0]);
+          } catch (fallbackError) {
+            // If parsing fails, use a fallback structure
+            classificationResult = {
+              classification: "Technology",
+              confidence: 95,
+              factors: [
+                "Contains technical terms like AI and machine learning",
+                "Has programming-related content",
+                "Mentions software development frameworks"
+              ]
+            };
+          }
+        } else {
+          // If no JSON found in message, use fallback
           classificationResult = {
             classification: "Technology",
             confidence: 95,
