@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Initialize OpenAI client with Novita endpoint
+    // Based on previous working implementation, using the v1 endpoint
     const openai = new OpenAI({
       apiKey: novitaApiKey,
       baseURL: 'https://open.novita.ai/v1',
