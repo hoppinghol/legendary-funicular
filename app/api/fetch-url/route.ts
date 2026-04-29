@@ -68,21 +68,27 @@ export async function POST(request: NextRequest) {
     console.log('====================================');
     
     // Extract the classification result from the LLM response
+    // Using reasoning_content instead of content as requested
     let classificationResult;
     try {
-      // Try to parse the response as JSON
-      classificationResult = JSON.parse(completion.choices[0].message.content);
+      // Try to parse the reasoning_content as JSON
+      classificationResult = JSON.parse(completion.choices[0].message.reasoning_content);
     } catch (parseError) {
-      // If parsing fails, use a fallback structure
-      classificationResult = {
-        classification: "Technology",
-        confidence: 95,
-        factors: [
-          "Contains technical terms like AI and machine learning",
-          "Has programming-related content",
-          "Mentions software development frameworks"
-        ]
-      };
+      // If parsing fails, fall back to trying to parse content
+      try {
+        classificationResult = JSON.parse(completion.choices[0].message.content);
+      } catch (fallbackError) {
+        // If both parsing fail, use a fallback structure
+        classificationResult = {
+          classification: "Technology",
+          confidence: 95,
+          factors: [
+            "Contains technical terms like AI and machine learning",
+            "Has programming-related content",
+            "Mentions software development frameworks"
+          ]
+        };
+      }
     }
     
     // Return the response data that will be used by the frontend
@@ -90,7 +96,7 @@ export async function POST(request: NextRequest) {
       text: prompt, // This will be shown in debug mode as the prompt
       metaData: {},
       classificationResult: classificationResult,
-      llmResponse: completion.choices[0].message.content, // Add the raw LLM response
+      llmResponse: completion.choices[0].message.reasoning_content || completion.choices[0].message.content, // Add the raw LLM response
       model: completion.model,
       response_time: completion.created ? `${Date.now() - completion.created * 1000}ms` : 'N/A',
       usage: completion.usage
