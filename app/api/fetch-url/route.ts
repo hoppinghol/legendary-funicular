@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     
     // Prepare the exact prompt as specified in the requirements
     // Removed "Page content:" as it's redundant
-    const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value`;
+    const prompt = `RETURN ONLY A JSON OBJECT WITH THESE EXACT KEYS: CLASSIFICATION, CONFIDENCE, AND FACTORS\n\nRetrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. The factors should be a list of exactly 3 items explaining why the classification was made\n3. The confidence should be a percentage value`;
     
     // Debug: Print what will be sent to Novita (this is what gets submitted to LLM)
     console.log('=== Prompt sent to LLM ===');
