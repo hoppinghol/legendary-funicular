@@ -51,18 +51,18 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="max-w-3xl w-full">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-3">
             Web Page Classifier
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto">
             Enter a URL below to analyze and classify its content using AI
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
@@ -109,24 +109,24 @@ export default function Home() {
         </div>
 
         {result && (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Classification Results</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-blue-800 uppercase tracking-wide mb-1">Classification</h3>
-                  <p className="text-2xl font-bold text-gray-900">{result.classification}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                  <h3 className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Classification</h3>
+                  <p className="text-lg font-bold text-gray-900">{result.classification}</p>
                 </div>
                 
-                <div className="bg-green-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-green-800 uppercase tracking-wide mb-1">Confidence</h3>
-                  <p className="text-2xl font-bold text-gray-900">{result.confidence}%</p>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <h3 className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-1">Confidence</h3>
+                  <p className="text-lg font-bold text-gray-900">{result.confidence}%</p>
                 </div>
                 
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-purple-800 uppercase tracking-wide mb-1">Factors</h3>
-                  <p className="text-2xl font-bold text-gray-900">{result.factors.length}</p>
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                  <h3 className="text-xs font-semibold text-purple-800 uppercase tracking-wide mb-1">Factors</h3>
+                  <p className="text-lg font-bold text-gray-900">{result.factors.length}</p>
                 </div>
               </div>
               
@@ -135,15 +135,15 @@ export default function Home() {
                 <ul className="space-y-2">
                   {result.factors.map((factor: string, index: number) => (
                     <li key={index} className="flex items-start">
-                      <span className="flex-shrink-0 h-5 w-5 text-blue-500 mt-0.5">•</span>
-                      <p className="ml-2 text-gray-700">{factor}</p>
+                      <span className="flex-shrink-0 h-4 w-4 text-blue-500 mt-0.5">•</span>
+                      <p className="ml-2 text-gray-700 text-sm">{factor}</p>
                     </li>
                   ))}
                 </ul>
               </div>
               
               <div className="pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500">
                   Analysis performed on: {new Date().toLocaleDateString()}
                 </p>
               </div>
