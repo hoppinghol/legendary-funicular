@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
   const [url, setUrl] = useState('');
@@ -193,9 +194,11 @@ export default function Home() {
               </div>
               
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Raw Response:</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Response:</h3>
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
-                  <pre className="text-sm text-gray-800 whitespace-pre-wrap">{llmResponse}</pre>
+                  <ReactMarkdown className="text-sm text-gray-800">
+                    {llmResponse}
+                  </ReactMarkdown>
                 </div>
               </div>
               
