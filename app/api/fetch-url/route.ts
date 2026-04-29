@@ -29,12 +29,15 @@ export async function POST(request: NextRequest) {
       });
       
       if (!fetchResponse.ok) {
-        throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+        // Return the actual HTTP error message from the page retrieval
+        return NextResponse.json({ 
+          error: `Failed to retrieve page content: ${fetchResponse.status} ${fetchResponse.statusText}` 
+        }, { status: 500 });
       }
       
       htmlContent = await fetchResponse.text();
     } catch (fetchError) {
-      // Return error response for web page retrieval issues
+      // Return the actual error message from the page retrieval
       return NextResponse.json({ 
         error: `Failed to retrieve page content: ${fetchError.message || 'Unknown error'}` 
       }, { status: 500 });
