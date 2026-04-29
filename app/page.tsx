@@ -50,6 +50,7 @@ export default function Home() {
         throw new Error(data.error);
       }
 
+      // Store the extracted text and metadata for debug display
       setExtractedText(data.text);
       setMetaData(data.metaData);
 

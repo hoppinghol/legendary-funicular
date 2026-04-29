@@ -17,54 +17,18 @@ export async function POST(request: NextRequest) {
     }
     
     // In a real implementation, this would fetch the actual URL content
-    // For demonstration purposes, we'll use mock content
-    const mockHtmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Sample Technology Blog</title>
-        <meta name="description" content="A blog about technology, AI, and software development">
-        <meta name="keywords" content="AI, machine learning, programming, software">
-        <meta name="author" content="Tech Writer">
-        <meta property="og:title" content="Technology Blog">
-        <meta property="og:description" content="Exploring the latest in technology and software development">
-        <meta property="og:url" content="${fullUrl}">
-      </head>
-      <body>
-        <h1>Welcome to our Technology Blog</h1>
-        <p>This page discusses artificial intelligence, machine learning, and software development.</p>
-        <p>We cover topics like neural networks, deep learning algorithms, and programming frameworks.</p>
-        <p>Our articles are written by experts in the field of computer science and technology.</p>
-        <div class="content">
-          <h2>Latest Articles</h2>
-          <p>Recent developments in AI research include breakthroughs in natural language processing.</p>
-          <p>Software engineers are increasingly adopting agile methodologies for faster development cycles.</p>
-        </div>
-      </body>
-      </html>
+    // For now, we'll simulate fetching the URL content
+    // In a production environment, you would:
+    // 1. Make an HTTP request to fetch the actual URL content
+    // 2. Extract text content from the HTML
+    // 3. Pass that content to the LLM
+    
+    // Simulate fetching URL content (in real implementation, this would be actual URL fetching)
+    const simulatedContent = `
+      This is simulated content from the web page at ${fullUrl}.
+      The actual implementation would fetch the real page content here.
+      This content would be extracted from the HTML of the page.
     `;
-    
-    // Simple HTML text extraction without DOMParser
-    // Remove script and style tags
-    let cleanHtml = mockHtmlContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-    cleanHtml = cleanHtml.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-    
-    // Extract text content
-    let textContent = cleanHtml.replace(/<[^>]+>/g, ' ');
-    textContent = textContent.replace(/\s+/g, ' ').trim();
-    
-    // Extract meta data
-    const metaTags: any = {};
-    const metaRegex = /<meta[^>]+(?:name|property)=["']([^"']*)["'][^>]+content=["']([^"']*)["']/gi;
-    let match;
-    while ((match = metaRegex.exec(mockHtmlContent)) !== null) {
-      const name = match[1];
-      const content = match[2];
-      metaTags[name] = content;
-    }
-    
-    // Clean up extracted text
-    const cleanedText = textContent.substring(0, 2000); // Limit to 2000 characters
     
     // Call Novita AI API using OpenAI client
     const novitaApiKey = process.env.NOVITA_API_KEY;
@@ -74,14 +38,13 @@ export async function POST(request: NextRequest) {
     }
     
     // Initialize OpenAI client with Novita endpoint
-    // Based on previous working implementation, using the v1 endpoint
     const openai = new OpenAI({
       apiKey: novitaApiKey,
-      baseURL: 'https://api.novita.ai/openai',
+      baseURL: 'https://open.novita.ai/v1',
     });
     
     // Prepare the exact prompt as specified in the requirements
-    const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value\n\nPage content:\n${cleanedText}`;
+    const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value\n\nPage content:\n${simulatedContent}`;
     
     // Debug: Print the JSON payload that will be sent to Novita
     console.log('=== Calling Novita API with OpenAI Client ===');
@@ -125,9 +88,10 @@ export async function POST(request: NextRequest) {
       };
     }
     
+    // Return the response data that will be used by the frontend
     return NextResponse.json({
-      text: cleanedText,
-      metaData: metaTags,
+      text: simulatedContent,
+      metaData: {},
       classificationResult: classificationResult
     });
   } catch (error) {
