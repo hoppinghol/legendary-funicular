@@ -141,6 +141,94 @@ export default function Home() {
     setUrl(site.url);
   };
 
+  const handleRefresh = async () => {
+    if (!url.trim()) {
+      setError('Please enter a URL');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setResult(null);
+    setExtractedText('');
+    setMetaData(null);
+    setLlmResponse('');
+    setLlmStats(null);
+
+    try {
+      // Prepend https:// if not present
+      let fullUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        fullUrl = `https://${url}`;
+      }
+
+      // Make request to our API endpoint to fetch and process the URL
+      const response = await fetch('/api/fetch-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: fullUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Store the extracted text and metadata for debug display
+      setExtractedText(data.text);
+      setMetaData(data.metaData);
+      setLlmResponse(data.llmResponse);
+      
+      // Extract stats from the LLM response if available
+      if (data.llmResponse) {
+        // Parse the response to extract stats
+        const stats = {
+          model: data.model || 'zai-org/glm-4.7-flash',
+          responseTime: data.response_time || 'N/A',
+          promptTokens: data.usage?.prompt_tokens || 'N/A',
+          reasoningTokens: data.usage?.completion_tokens || 'N/A'
+        };
+        setLlmStats(stats);
+      }
+
+      // Use the classification result from Novita API
+      setResult(data.classificationResult);
+      
+      // Update recent sites with refreshed data
+      const updatedSite = {
+        url: fullUrl,
+        result: data.classificationResult,
+        extractedText: data.text,
+        metaData: data.metaData,
+        llmResponse: data.llmResponse,
+        llmStats: {
+          model: data.model || 'zai-org/glm-4.7-flash',
+          responseTime: data.response_time || 'N/A',
+          promptTokens: data.usage?.prompt_tokens || 'N/A',
+          reasoningTokens: data.usage?.completion_tokens || 'N/A'
+        },
+        timestamp: new Date()
+      };
+      
+      setRecentSites(prev => {
+        const updated = [updatedSite, ...prev.filter(site => site.url !== fullUrl)];
+        return updated.slice(0, 5); // Keep only last 5
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to analyze the page. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="max-w-6xl w-full flex flex-col md:flex-row gap-8">
@@ -227,7 +315,30 @@ export default function Home() {
           {result && (
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Classification Results</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Classification Results</h2>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={loading}
+                    className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    title="Refresh analysis"
+                  >
+                    <svg 
+                      className={`w-5 h-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                      />
+                    </svg>
+                  </button>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
