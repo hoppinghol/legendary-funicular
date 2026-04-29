@@ -67,7 +67,7 @@ export default function Home() {
           model: data.model || 'zai-org/glm-4.7-flash',
           responseTime: data.response_time || 'N/A',
           promptTokens: data.usage?.prompt_tokens || 'N/A',
-          reasoningTokens: data.usage?.reasoning_tokens || 'N/A'
+          reasoningTokens: data.usage?.completion_tokens || 'N/A'
         };
         setLlmStats(stats);
       }
@@ -224,7 +224,7 @@ export default function Home() {
                             <td className="px-4 py-2 text-sm text-gray-700">{llmStats.promptTokens}</td>
                           </tr>
                           <tr>
-                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Reasoning Tokens</td>
+                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Completion Tokens</td>
                             <td className="px-4 py-2 text-sm text-gray-700">{llmStats.reasoningTokens}</td>
                           </tr>
                         </tbody>
