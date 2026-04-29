@@ -32,33 +32,28 @@ export async function POST(request: NextRequest) {
     
     const htmlContent = await fetchResponse.text();
     
-    // Extract text content from HTML
-    // Create a temporary DOM element to parse the HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
-    
-    // Remove script and style elements
-    doc.querySelectorAll('script, style').forEach(el => el.remove());
+    // Extract text content from HTML using regex (Node.js compatible)
+    // Remove script and style tags
+    let cleanHtml = htmlContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    cleanHtml = cleanHtml.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
     
     // Extract text content
-    let textContent = doc.body.textContent || doc.body.innerText || '';
-    
-    // Clean up text content
+    let textContent = cleanHtml.replace(/<[^>]+>/g, ' ');
     textContent = textContent.replace(/\s+/g, ' ').trim();
     
     // Extract meta data
     const metaTags: any = {};
-    const metaElements = doc.querySelectorAll('meta');
-    metaElements.forEach(element => {
-      const name = element.getAttribute('name') || element.getAttribute('property');
-      const content = element.getAttribute('content');
-      if (name && content) {
-        metaTags[name] = content;
-      }
-    });
+    const metaRegex = /<meta[^>]+(?:name|property)=["']([^"']*)["'][^>]+content=["']([^"']*)["']/gi;
+    let match;
+    while ((match = metaRegex.exec(htmlContent)) !== null) {
+      const name = match[1];
+      const content = match[2];
+      metaTags[name] = content;
+    }
     
     // Get page title
-    const pageTitle = doc.title;
+    const titleMatch = htmlContent.match(/<title[^>]*>(.*?)<\/title>/i);
+    const pageTitle = titleMatch ? titleMatch[1] : '';
     
     // Call local LLM API
     const openai = new OpenAI({
