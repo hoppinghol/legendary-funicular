@@ -94,11 +94,14 @@ export async function POST(request: NextRequest) {
     console.log('====================================');
     
     // Extract the classification result from the LLM response
-    // The LLM response can be either pure JSON or JSON embedded in markdown
+    // The LLM response can be either:
+    // 1. Pure JSON object
+    // 2. JSON embedded in markdown code blocks
+    // 3. JSON as a string (escaped)
     let classificationResult;
     const messageContent = completion.choices[0].message.content || '';
     
-    // Helper function to safely extract and parse JSON
+    // Helper function to safely extract and parse JSON from various formats
     const extractJson = (text: string): any => {
       // Try 1: Direct JSON parsing
       try {
@@ -110,19 +113,25 @@ export async function POST(request: NextRequest) {
           try {
             return JSON.parse(codeBlockMatches[1].trim());
           } catch (e2) {
-            // Try 3: Find JSON-like structure in text
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              try {
-                return JSON.parse(jsonMatch[0]);
-              } catch (e3) {
-                // Try 4: Find first valid JSON object
-                const jsonObjects = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
-                if (jsonObjects && jsonObjects.length > 0) {
-                  try {
-                    return JSON.parse(jsonObjects[0]);
-                  } catch (e4) {
-                    return null;
+            // If that fails, try to parse the inner content
+            const innerContent = codeBlockMatches[1].trim();
+            try {
+              return JSON.parse(innerContent);
+            } catch (e3) {
+              // Try 3: Check if it's a JSON string that was escaped
+              if (innerContent.startsWith('"') && innerContent.endsWith('"')) {
+                try {
+                  const unescaped = innerContent.slice(1, -1); // Remove surrounding quotes
+                  return JSON.parse(unescaped);
+                } catch (e4) {
+                  // Try 4: Find JSON-like structure in text
+                  const jsonMatch = innerContent.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) {
+                    try {
+                      return JSON.parse(jsonMatch[0]);
+                    } catch (e5) {
+                      return null;
+                    }
                   }
                 }
               }
@@ -130,13 +139,30 @@ export async function POST(request: NextRequest) {
           }
         }
         
-        // Try 5: Clean and parse
-        const cleaned = text.replace(/[\r\n\t]/g, ' ').trim();
-        const jsonMatch = cleaned.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
-        if (jsonMatch) {
+        // Try 5: Check if the whole text is a JSON string
+        if (text.startsWith('"') && text.endsWith('"')) {
           try {
-            return JSON.parse(jsonMatch[0]);
+            const unescaped = text.slice(1, -1); // Remove surrounding quotes
+            return JSON.parse(unescaped);
           } catch (e5) {
+            // Try 6: Find JSON-like structure in text
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              try {
+                return JSON.parse(jsonMatch[0]);
+              } catch (e6) {
+                return null;
+              }
+            }
+          }
+        }
+        
+        // Try 7: Find first valid JSON object
+        const jsonObjects = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+        if (jsonObjects && jsonObjects.length > 0) {
+          try {
+            return JSON.parse(jsonObjects[0]);
+          } catch (e7) {
             return null;
           }
         }
