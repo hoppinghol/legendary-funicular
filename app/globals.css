@@ -23,3 +23,12 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Custom styles for grey placeholder text and input text */
+input::placeholder {
+  color: #9ca3af; /* gray-400 */
+}
+
+input {
+  color: #4b5563; /* gray-600 */
+}
