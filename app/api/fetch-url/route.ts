@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { OpenAI } from 'openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,18 +66,27 @@ export async function POST(request: NextRequest) {
     // Clean up extracted text
     const cleanedText = textContent.substring(0, 2000); // Limit to 2000 characters
     
-    // Call Novita AI API with zai-org/glm-4.7-flash model
+    // Call Novita AI API using OpenAI client
     const novitaApiKey = process.env.NOVITA_API_KEY;
     
     if (!novitaApiKey) {
       throw new Error('NOVITA_API_KEY environment variable is not set');
     }
     
+    // Initialize OpenAI client with Novita endpoint
+    const openai = new OpenAI({
+      apiKey: novitaApiKey,
+      baseURL: 'https://open.novita.ai/v1',
+    });
+    
     // Prepare the exact prompt as specified in the requirements
     const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value\n\nPage content:\n${cleanedText}`;
     
     // Debug: Print the JSON payload that will be sent to Novita
-    const payload = {
+    console.log('=== Calling Novita API with OpenAI Client ===');
+    
+    // Use the chat.completions.create method
+    const completion = await openai.chat.completions.create({
       model: 'zai-org/glm-4.7-flash',
       messages: [
         {
@@ -90,46 +100,17 @@ export async function POST(request: NextRequest) {
       ],
       temperature: 0.3,
       max_tokens: 500
-    };
-    
-    console.log('=== JSON Payload Sent to Novita API ===');
-    console.log(JSON.stringify(payload, null, 2));
-    console.log('=====================================');
-    
-    const response = await fetch('https://open.novita.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${novitaApiKey}`
-      },
-      body: JSON.stringify(payload)
     });
     
-    // Debug: Print the HTTP response status
-    console.log('=== HTTP Response Status ===');
-    console.log(response.status);
-    console.log('============================');
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.log('=== Error Response from Novita API ===');
-      console.log(JSON.stringify(errorData, null, 2));
-      console.log('====================================');
-      throw new Error(`Novita API error: ${errorData.error?.message || response.statusText}`);
-    }
-    
-    const result = await response.json();
-    
-    // Debug: Print the full response from Novita API
-    console.log('=== Full Response from Novita API ===');
-    console.log(JSON.stringify(result, null, 2));
+    console.log('=== Response from Novita API ===');
+    console.log(JSON.stringify(completion, null, 2));
     console.log('====================================');
     
     // Extract the classification result from the LLM response
     let classificationResult;
     try {
       // Try to parse the response as JSON
-      classificationResult = JSON.parse(result.choices[0].message.content);
+      classificationResult = JSON.parse(completion.choices[0].message.content);
     } catch (parseError) {
       // If parsing fails, use a fallback structure
       classificationResult = {
