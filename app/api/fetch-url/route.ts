@@ -94,12 +94,12 @@ export async function POST(request: NextRequest) {
     console.log('====================================');
     
     // Extract the classification result from the LLM response
-    // The LLM response contains markdown code block with JSON
+    // The LLM response can be either pure JSON or JSON embedded in markdown
     let classificationResult;
     const messageContent = completion.choices[0].message.content || '';
     
     try {
-      // Try to parse the entire message as JSON first
+      // Try to parse the entire message as JSON first (handles pure JSON responses)
       classificationResult = JSON.parse(messageContent);
     } catch (parseError) {
       // If that fails, look for JSON within markdown code blocks
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } else {
-        // If no code block found, try to extract JSON from content
+        // If no code block found, try to extract JSON from content (handles pure JSON)
         const jsonLikeMatch = messageContent.match(/\{.*\}/s);
         if (jsonLikeMatch) {
           try {
