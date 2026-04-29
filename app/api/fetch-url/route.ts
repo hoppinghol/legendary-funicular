@@ -98,116 +98,74 @@ export async function POST(request: NextRequest) {
     let classificationResult;
     const messageContent = completion.choices[0].message.content || '';
     
-    try {
-      // Try to parse the entire message as JSON first (handles pure JSON responses)
-      classificationResult = JSON.parse(messageContent);
-    } catch (parseError) {
-      // If that fails, look for JSON within markdown code blocks
-      // More robust pattern matching for code blocks
-      const codeBlockRegex = /```(?:json)?\s*({.*?})\s*```/gs;
-      const codeBlockMatch = messageContent.match(codeBlockRegex);
-      
-      if (codeBlockMatch && codeBlockMatch.length > 0) {
-        // Get the first code block content
-        const codeBlockContent = codeBlockMatch[0];
-        // Extract JSON from code block
-        const jsonMatch = codeBlockContent.match(/{.*}/s);
-        if (jsonMatch && jsonMatch[0]) {
+    // Helper function to safely extract and parse JSON
+    const extractJson = (text: string): any => {
+      // Try 1: Direct JSON parsing
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        // Try 2: Find JSON in markdown code blocks
+        const codeBlockMatches = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (codeBlockMatches && codeBlockMatches[1]) {
           try {
-            classificationResult = JSON.parse(jsonMatch[0]);
-          } catch (fallbackError) {
-            // If parsing fails, try to extract and parse the content
-            const jsonLikeMatch = messageContent.match(/\{.*\}/s);
-            if (jsonLikeMatch) {
+            return JSON.parse(codeBlockMatches[1].trim());
+          } catch (e2) {
+            // Try 3: Find JSON-like structure in text
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
               try {
-                classificationResult = JSON.parse(jsonLikeMatch[0]);
-              } catch (finalFallbackError) {
-                // If all parsing fails, use a fallback structure
-                classificationResult = {
-                  classification: "Other",
-                  confidence: 95,
-                  factors: [
-                    "Content could not be clearly classified into the specified categories",
-                    "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
-                    "General information or mixed content type"
-                  ]
-                };
+                return JSON.parse(jsonMatch[0]);
+              } catch (e3) {
+                // Try 4: Find first valid JSON object
+                const jsonObjects = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+                if (jsonObjects && jsonObjects.length > 0) {
+                  try {
+                    return JSON.parse(jsonObjects[0]);
+                  } catch (e4) {
+                    return null;
+                  }
+                }
               }
-            } else {
-              // If no JSON found in message, use fallback
-              classificationResult = {
-                classification: "Other",
-                confidence: 95,
-                factors: [
-                  "Content could not be clearly classified into the specified categories",
-                  "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
-                  "General information or mixed content type"
-                ]
-              };
             }
-          }
-        } else {
-          // If no JSON found in code block, try to extract JSON from content
-          const jsonLikeMatch = messageContent.match(/\{.*\}/s);
-          if (jsonLikeMatch) {
-            try {
-              classificationResult = JSON.parse(jsonLikeMatch[0]);
-            } catch (fallbackError) {
-              // If parsing fails, use a fallback structure
-              classificationResult = {
-                classification: "Other",
-                confidence: 95,
-                factors: [
-                  "Content could not be clearly classified into the specified categories",
-                  "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
-                  "General information or mixed content type"
-                ]
-              };
-            }
-          } else {
-            // If no JSON found in message, use fallback
-            classificationResult = {
-              classification: "Other",
-              confidence: 95,
-              factors: [
-                "Content could not be clearly classified into the specified categories",
-                "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
-                "General information or mixed content type"
-              ]
-            };
           }
         }
-      } else {
-        // If no code block found, try to extract JSON from content (handles pure JSON)
-        const jsonLikeMatch = messageContent.match(/\{.*\}/s);
-        if (jsonLikeMatch) {
+        
+        // Try 5: Clean and parse
+        const cleaned = text.replace(/[\r\n\t]/g, ' ').trim();
+        const jsonMatch = cleaned.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
+        if (jsonMatch) {
           try {
-            classificationResult = JSON.parse(jsonLikeMatch[0]);
-          } catch (fallbackError) {
-            // If parsing fails, use a fallback structure
-            classificationResult = {
-              classification: "Other",
-              confidence: 95,
-              factors: [
-                "Content could not be clearly classified into the specified categories",
-                "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
-                "General information or mixed content type"
-              ]
-            };
+            return JSON.parse(jsonMatch[0]);
+          } catch (e5) {
+            return null;
           }
-        } else {
-          // If no JSON found in message, use fallback
-          classificationResult = {
-            classification: "Other",
-            confidence: 95,
-            factors: [
-              "Content could not be clearly classified into the specified categories",
-              "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
-              "General information or mixed content type"
-            ]
-          };
         }
+        
+        return null;
       }
+    };
+    
+    // Attempt to extract JSON from the response
+    classificationResult = extractJson(messageContent);
+    
+    // If we couldn't extract valid JSON, use fallback
+    if (!classificationResult) {
+      console.log('Could not extract valid JSON from LLM response. Using fallback.');
+      classificationResult = {
+        classification: "Other",
+        confidence: 95,
+        factors: [
+          "Content could not be clearly classified into the specified categories",
+          "Lacks distinctive features of Ecommerce, Social/UGC, or News/Media",
+          "General information or mixed content type"
+        ]
+      };
+    }
+    
+    // Ensure classification is one of the allowed values
+    const allowedClassifications = ["Ecommerce", "Social / UGC", "News / Media", "Other"];
+    if (!allowedClassifications.includes(classificationResult.classification)) {
+      classificationResult.classification = "Other";
     }
     
     // Return the response data that will be used by the frontend
