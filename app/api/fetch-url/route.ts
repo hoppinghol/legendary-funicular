@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         }
       ],
       temperature: 0.3,
-      max_tokens: 500
+      max_tokens: 400
     });
     
     // Debug: Print the full response from LLM
