@@ -23,17 +23,10 @@ export async function POST(request: NextRequest) {
     // 2. Extract text content from the HTML
     // 3. Pass that content to the LLM
     
-    // Call Novita AI API using OpenAI client
-    const novitaApiKey = process.env.NOVITA_API_KEY;
-    
-    if (!novitaApiKey) {
-      throw new Error('NOVITA_API_KEY environment variable is not set');
-    }
-    
-    // Initialize OpenAI client with Novita endpoint
+    // Call local LLM API
     const openai = new OpenAI({
-      apiKey: novitaApiKey,
-      baseURL: 'https://api.novita.ai/openai',
+      baseURL: 'http://localhost:11434/v1/',
+      apiKey: 'ollama', // Ollama doesn't require an API key, but we need to provide one
     });
     
     // Prepare the exact prompt as specified in the requirements
@@ -41,13 +34,13 @@ export async function POST(request: NextRequest) {
     const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value`;
     
     // Debug: Print what will be sent to Novita (this is what gets submitted to LLM)
-    console.log('=== Prompt sent to Novita API ===');
+    console.log('=== Prompt sent to LLM ===');
     console.log(prompt);
     console.log('==================================');
     
     // Use the chat.completions.create method
     const completion = await openai.chat.completions.create({
-      model: 'zai-org/glm-4.7-flash',
+      model: 'llama3.1',
       messages: [
         {
           role: 'system',
@@ -62,8 +55,8 @@ export async function POST(request: NextRequest) {
       max_tokens: 500
     });
     
-    // Debug: Print the full response from Novita API
-    console.log('=== Response from Novita API ===');
+    // Debug: Print the full response from LLM
+    console.log('=== Response from LLM ===');
     console.log(JSON.stringify(completion, null, 2));
     console.log('====================================');
     
@@ -102,7 +95,7 @@ export async function POST(request: NextRequest) {
       usage: completion.usage
     });
   } catch (error) {
-    console.error('Error fetching URL or calling Novita API:', error);
+    console.error('Error fetching URL or calling LLM:', error);
     return NextResponse.json({ error: 'Failed to process URL or classify content' }, { status: 500 });
   }
 }
