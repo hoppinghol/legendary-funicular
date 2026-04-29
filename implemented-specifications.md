@@ -25,9 +25,9 @@ This document outlines how the web page classifier implementation satisfies the 
 - ✅ Automatically prepends https:// if not present
 - ✅ Validates URL format
 
-### Novita AI Integration
-- ✅ Makes API calls to Novita AI service
-- ✅ Uses the specified `zai-org/glm-4.7-flash` model
+### Local LLM Integration
+- ✅ Makes API calls to local LLM service (Ollama)
+- ✅ Uses the specified `llama3.1` model
 - ✅ Sends properly formatted JSON payload with:
   - System prompt instructing the LLM
   - User prompt with URL and content instructions
@@ -39,11 +39,13 @@ This document outlines how the web page classifier implementation satisfies the 
 - ✅ Specifies exact JSON response format with keys: classification, confidence, factors
 - ✅ Requires exactly 3 factors in the factors list
 - ✅ Requests confidence as percentage value
+- ✅ Uses specific instruction format to ensure consistent JSON output
 
 ### Response Processing
-- ✅ Parses JSON response from Novita AI
+- ✅ Parses JSON response from LLM with case-insensitive key handling
 - ✅ Handles parsing errors gracefully with fallback values
 - ✅ Extracts classification, confidence, and factors from LLM response
+- ✅ Normalizes JSON keys to handle upper/lower case variations
 
 ### UI Implementation
 - ✅ Next.js 14 with App Router
@@ -54,14 +56,14 @@ This document outlines how the web page classifier implementation satisfies the 
 - ✅ Includes date of analysis
 
 ### Debugging Features
-- ✅ Prints JSON payload sent to Novita API
-- ✅ Prints HTTP response status from Novita API
-- ✅ Prints full response from Novita API
+- ✅ Prints JSON payload sent to LLM
+- ✅ Prints HTTP response status from LLM
+- ✅ Prints full response from LLM
 - ✅ Toggleable debug mode to show raw content and metadata
 
 ### Error Handling
 - ✅ Validates URL input
-- ✅ Handles Novita API errors gracefully
+- ✅ Handles LLM API errors gracefully
 - ✅ Provides user-friendly error messages
 - ✅ Includes proper loading states
 
@@ -69,5 +71,5 @@ This document outlines how the web page classifier implementation satisfies the 
 - ✅ Uses TypeScript for type safety
 - ✅ Implements React hooks for state management
 - ✅ Follows Next.js best practices
-- ✅ Includes proper environment variable handling for API keys
 - ✅ Maintains backward compatibility with existing functionality
+- ✅ Handles case-insensitive JSON element names in classification results parsing
