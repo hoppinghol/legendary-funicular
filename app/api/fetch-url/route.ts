@@ -102,33 +102,129 @@ export async function POST(request: NextRequest) {
     const messageContent = completion.choices[0].message.content || '';
     
     // Helper function to safely extract and parse JSON from various formats
+    // Modified to handle case-insensitive keys
     const extractJson = (text: string): any => {
       // Try 1: Direct JSON parsing
       try {
-        return JSON.parse(text);
+        const parsed = JSON.parse(text);
+        // Normalize keys to handle case-insensitivity
+        if (parsed && typeof parsed === 'object') {
+          const normalized: any = {};
+          for (const key in parsed) {
+            const lowerKey = key.toLowerCase();
+            if (lowerKey === 'classification') {
+              normalized.classification = parsed[key];
+            } else if (lowerKey === 'confidence') {
+              normalized.confidence = parsed[key];
+            } else if (lowerKey === 'factors') {
+              normalized.factors = parsed[key];
+            } else {
+              // Preserve other keys if they exist
+              normalized[key] = parsed[key];
+            }
+          }
+          return normalized;
+        }
+        return parsed;
       } catch (e) {
         // Try 2: Find JSON in markdown code blocks
         const codeBlockMatches = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
         if (codeBlockMatches && codeBlockMatches[1]) {
           try {
-            return JSON.parse(codeBlockMatches[1].trim());
+            const parsed = JSON.parse(codeBlockMatches[1].trim());
+            // Normalize keys to handle case-insensitivity
+            if (parsed && typeof parsed === 'object') {
+              const normalized: any = {};
+              for (const key in parsed) {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey === 'classification') {
+                  normalized.classification = parsed[key];
+                } else if (lowerKey === 'confidence') {
+                  normalized.confidence = parsed[key];
+                } else if (lowerKey === 'factors') {
+                  normalized.factors = parsed[key];
+                } else {
+                  // Preserve other keys if they exist
+                  normalized[key] = parsed[key];
+                }
+              }
+              return normalized;
+            }
+            return parsed;
           } catch (e2) {
             // If that fails, try to parse the inner content
             const innerContent = codeBlockMatches[1].trim();
             try {
-              return JSON.parse(innerContent);
+              const parsed = JSON.parse(innerContent);
+              // Normalize keys to handle case-insensitivity
+              if (parsed && typeof parsed === 'object') {
+                const normalized: any = {};
+                for (const key in parsed) {
+                  const lowerKey = key.toLowerCase();
+                  if (lowerKey === 'classification') {
+                    normalized.classification = parsed[key];
+                  } else if (lowerKey === 'confidence') {
+                    normalized.confidence = parsed[key];
+                  } else if (lowerKey === 'factors') {
+                    normalized.factors = parsed[key];
+                  } else {
+                    // Preserve other keys if they exist
+                    normalized[key] = parsed[key];
+                  }
+                }
+                return normalized;
+              }
+              return parsed;
             } catch (e3) {
               // Try 3: Check if it's a JSON string that was escaped
               if (innerContent.startsWith('"') && innerContent.endsWith('"')) {
                 try {
                   const unescaped = innerContent.slice(1, -1); // Remove surrounding quotes
-                  return JSON.parse(unescaped);
+                  const parsed = JSON.parse(unescaped);
+                  // Normalize keys to handle case-insensitivity
+                  if (parsed && typeof parsed === 'object') {
+                    const normalized: any = {};
+                    for (const key in parsed) {
+                      const lowerKey = key.toLowerCase();
+                      if (lowerKey === 'classification') {
+                        normalized.classification = parsed[key];
+                      } else if (lowerKey === 'confidence') {
+                        normalized.confidence = parsed[key];
+                      } else if (lowerKey === 'factors') {
+                        normalized.factors = parsed[key];
+                      } else {
+                        // Preserve other keys if they exist
+                        normalized[key] = parsed[key];
+                      }
+                    }
+                    return normalized;
+                  }
+                  return parsed;
                 } catch (e4) {
                   // Try 4: Find JSON-like structure in text
                   const jsonMatch = innerContent.match(/\{[\s\S]*\}/);
                   if (jsonMatch) {
                     try {
-                      return JSON.parse(jsonMatch[0]);
+                      const parsed = JSON.parse(jsonMatch[0]);
+                      // Normalize keys to handle case-insensitivity
+                      if (parsed && typeof parsed === 'object') {
+                        const normalized: any = {};
+                        for (const key in parsed) {
+                          const lowerKey = key.toLowerCase();
+                          if (lowerKey === 'classification') {
+                            normalized.classification = parsed[key];
+                          } else if (lowerKey === 'confidence') {
+                            normalized.confidence = parsed[key];
+                          } else if (lowerKey === 'factors') {
+                            normalized.factors = parsed[key];
+                          } else {
+                            // Preserve other keys if they exist
+                            normalized[key] = parsed[key];
+                          }
+                        }
+                        return normalized;
+                      }
+                      return parsed;
                     } catch (e5) {
                       return null;
                     }
@@ -143,13 +239,51 @@ export async function POST(request: NextRequest) {
         if (text.startsWith('"') && text.endsWith('"')) {
           try {
             const unescaped = text.slice(1, -1); // Remove surrounding quotes
-            return JSON.parse(unescaped);
+            const parsed = JSON.parse(unescaped);
+            // Normalize keys to handle case-insensitivity
+            if (parsed && typeof parsed === 'object') {
+              const normalized: any = {};
+              for (const key in parsed) {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey === 'classification') {
+                  normalized.classification = parsed[key];
+                } else if (lowerKey === 'confidence') {
+                  normalized.confidence = parsed[key];
+                } else if (lowerKey === 'factors') {
+                  normalized.factors = parsed[key];
+                } else {
+                  // Preserve other keys if they exist
+                  normalized[key] = parsed[key];
+                }
+              }
+              return normalized;
+            }
+            return parsed;
           } catch (e5) {
             // Try 6: Find JSON-like structure in text
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
               try {
-                return JSON.parse(jsonMatch[0]);
+                const parsed = JSON.parse(jsonMatch[0]);
+                // Normalize keys to handle case-insensitivity
+                if (parsed && typeof parsed === 'object') {
+                  const normalized: any = {};
+                  for (const key in parsed) {
+                    const lowerKey = key.toLowerCase();
+                    if (lowerKey === 'classification') {
+                      normalized.classification = parsed[key];
+                    } else if (lowerKey === 'confidence') {
+                      normalized.confidence = parsed[key];
+                    } else if (lowerKey === 'factors') {
+                      normalized.factors = parsed[key];
+                    } else {
+                      // Preserve other keys if they exist
+                      normalized[key] = parsed[key];
+                    }
+                  }
+                  return normalized;
+                }
+                return parsed;
               } catch (e6) {
                 return null;
               }
@@ -161,7 +295,26 @@ export async function POST(request: NextRequest) {
         const jsonObjects = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
         if (jsonObjects && jsonObjects.length > 0) {
           try {
-            return JSON.parse(jsonObjects[0]);
+            const parsed = JSON.parse(jsonObjects[0]);
+            // Normalize keys to handle case-insensitivity
+            if (parsed && typeof parsed === 'object') {
+              const normalized: any = {};
+              for (const key in parsed) {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey === 'classification') {
+                  normalized.classification = parsed[key];
+                } else if (lowerKey === 'confidence') {
+                  normalized.confidence = parsed[key];
+                } else if (lowerKey === 'factors') {
+                  normalized.factors = parsed[key];
+                } else {
+                  // Preserve other keys if they exist
+                  normalized[key] = parsed[key];
+                }
+              }
+              return normalized;
+            }
+            return parsed;
           } catch (e7) {
             return null;
           }
