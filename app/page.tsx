@@ -53,22 +53,8 @@ export default function Home() {
       setExtractedText(data.text);
       setMetaData(data.metaData);
 
-      // In a real implementation, you would send data.text to Novita API
-      // For now, we'll simulate the API response
-      const mockResponse = {
-        classification: "Technology",
-        confidence: 95,
-        factors: [
-          "Contains technical terms like AI and machine learning",
-          "Has programming-related content",
-          "Mentions software development frameworks"
-        ]
-      };
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setResult(mockResponse);
+      // Use the classification result from Novita API
+      setResult(data.classificationResult);
     } catch (err) {
       setError('Failed to analyze the page. Please try again.');
       console.error(err);

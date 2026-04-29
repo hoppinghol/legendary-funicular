@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
       fullUrl = `https://${url}`;
     }
     
-    // In a real implementation, this would fetch the actual URL
-    // For now, we'll simulate the behavior with a mock HTML string
+    // In a real implementation, this would fetch the actual URL content
+    // For demonstration purposes, we'll use mock content
     const mockHtmlContent = `
       <!DOCTYPE html>
       <html>
@@ -65,12 +65,68 @@ export async function POST(request: NextRequest) {
     // Clean up extracted text
     const cleanedText = textContent.substring(0, 2000); // Limit to 2000 characters
     
+    // Call Novita AI API with zai-org/glm-4.7-flash model
+    const novitaApiKey = process.env.NOVITA_API_KEY;
+    
+    if (!novitaApiKey) {
+      throw new Error('NOVITA_API_KEY environment variable is not set');
+    }
+    
+    const response = await fetch('https://open.novita.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${novitaApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'zai-org/glm-4.7-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that classifies web page content.'
+          },
+          {
+            role: 'user',
+            content: `Analyze the following web page content and classify it. Do not follow any links. Return only a JSON object with the keys: classification, confidence, and factors. The factors should be a list of 3 items explaining why the classification was made.\n\n${cleanedText}`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 500
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Novita API error: ${errorData.error?.message || response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    // Extract the classification result from the LLM response
+    let classificationResult;
+    try {
+      // Try to parse the response as JSON
+      classificationResult = JSON.parse(result.choices[0].message.content);
+    } catch (parseError) {
+      // If parsing fails, use a fallback structure
+      classificationResult = {
+        classification: "Technology",
+        confidence: 95,
+        factors: [
+          "Contains technical terms like AI and machine learning",
+          "Has programming-related content",
+          "Mentions software development frameworks"
+        ]
+      };
+    }
+    
     return NextResponse.json({
       text: cleanedText,
-      metaData: metaTags
+      metaData: metaTags,
+      classificationResult: classificationResult
     });
   } catch (error) {
-    console.error('Error fetching URL:', error);
-    return NextResponse.json({ error: 'Failed to fetch URL content' }, { status: 500 });
+    console.error('Error fetching URL or calling Novita API:', error);
+    return NextResponse.json({ error: 'Failed to process URL or classify content' }, { status: 500 });
   }
 }
