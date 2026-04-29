@@ -72,35 +72,58 @@ export async function POST(request: NextRequest) {
       throw new Error('NOVITA_API_KEY environment variable is not set');
     }
     
+    // Prepare the exact prompt as specified in the requirements
+    const prompt = `Retrieve the web page at: ${fullUrl}\n\nAnalyze the content of this web page and classify it according to the following instructions:\n1. Do not follow any links\n2. Return only a JSON object with these exact keys: classification, confidence, and factors\n3. The factors should be a list of exactly 3 items explaining why the classification was made\n4. The confidence should be a percentage value\n\nPage content:\n${cleanedText}`;
+    
+    // Debug: Print the JSON payload that will be sent to Novita
+    const payload = {
+      model: 'zai-org/glm-4.7-flash',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that classifies web page content.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 500
+    };
+    
+    console.log('=== JSON Payload Sent to Novita API ===');
+    console.log(JSON.stringify(payload, null, 2));
+    console.log('=====================================');
+    
     const response = await fetch('https://open.novita.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${novitaApiKey}`
       },
-      body: JSON.stringify({
-        model: 'zai-org/glm-4.7-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that classifies web page content.'
-          },
-          {
-            role: 'user',
-            content: `Analyze the following web page content and classify it. Do not follow any links. Return only a JSON object with the keys: classification, confidence, and factors. The factors should be a list of 3 items explaining why the classification was made.\n\n${cleanedText}`
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 500
-      })
+      body: JSON.stringify(payload)
     });
+    
+    // Debug: Print the HTTP response status
+    console.log('=== HTTP Response Status ===');
+    console.log(response.status);
+    console.log('============================');
     
     if (!response.ok) {
       const errorData = await response.json();
+      console.log('=== Error Response from Novita API ===');
+      console.log(JSON.stringify(errorData, null, 2));
+      console.log('====================================');
       throw new Error(`Novita API error: ${errorData.error?.message || response.statusText}`);
     }
     
     const result = await response.json();
+    
+    // Debug: Print the full response from Novita API
+    console.log('=== Full Response from Novita API ===');
+    console.log(JSON.stringify(result, null, 2));
+    console.log('====================================');
     
     // Extract the classification result from the LLM response
     let classificationResult;
