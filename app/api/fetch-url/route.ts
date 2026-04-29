@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       throw new Error('NOVITA_API_KEY environment variable is not set');
     }
     
-    const response = await fetch('https://api.novita.ai/openai', {
+    const response = await fetch('https://open.novita.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
