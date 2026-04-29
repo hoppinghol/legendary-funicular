@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
@@ -13,11 +13,38 @@ export default function Home() {
   const [metaData, setMetaData] = useState<any>(null);
   const [llmResponse, setLlmResponse] = useState('');
   const [llmStats, setLlmStats] = useState<any>(null);
+  const [recentSites, setRecentSites] = useState<any[]>([]);
+
+  // Load recent sites from localStorage on component mount
+  useEffect(() => {
+    const savedSites = localStorage.getItem('recentSites');
+    if (savedSites) {
+      setRecentSites(JSON.parse(savedSites));
+    }
+  }, []);
+
+  // Save recent sites to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('recentSites', JSON.stringify(recentSites));
+  }, [recentSites]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) {
       setError('Please enter a URL');
+      return;
+    }
+
+    // Check if this URL was recently analyzed
+    const existingSite = recentSites.find(site => site.url === url);
+    if (existingSite) {
+      setResult(existingSite.result);
+      setExtractedText(existingSite.extractedText);
+      setMetaData(existingSite.metaData);
+      setLlmResponse(existingSite.llmResponse);
+      if (existingSite.llmStats) {
+        setLlmStats(existingSite.llmStats);
+      }
       return;
     }
 
@@ -74,6 +101,27 @@ export default function Home() {
 
       // Use the classification result from Novita API
       setResult(data.classificationResult);
+      
+      // Add to recent sites (keep only last 5)
+      const newSite = {
+        url: fullUrl,
+        result: data.classificationResult,
+        extractedText: data.text,
+        metaData: data.metaData,
+        llmResponse: data.llmResponse,
+        llmStats: {
+          model: data.model || 'zai-org/glm-4.7-flash',
+          responseTime: data.response_time || 'N/A',
+          promptTokens: data.usage?.prompt_tokens || 'N/A',
+          reasoningTokens: data.usage?.completion_tokens || 'N/A'
+        },
+        timestamp: new Date()
+      };
+      
+      setRecentSites(prev => {
+        const updated = [newSite, ...prev.filter(site => site.url !== fullUrl)];
+        return updated.slice(0, 5); // Keep only last 5
+      });
     } catch (err) {
       setError('Failed to analyze the page. Please try again.');
       console.error(err);
@@ -82,191 +130,228 @@ export default function Home() {
     }
   };
 
+  const handleSiteClick = (site: any) => {
+    setResult(site.result);
+    setExtractedText(site.extractedText);
+    setMetaData(site.metaData);
+    setLlmResponse(site.llmResponse);
+    if (site.llmStats) {
+      setLlmStats(site.llmStats);
+    }
+    setUrl(site.url);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="max-w-3xl w-full">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-3">
-            Web Page Classifier
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Enter a URL below to analyze and classify its content using AI
-          </p>
+      <div className="max-w-6xl w-full flex flex-col md:flex-row gap-8">
+        {/* Left Panel - Recent Sites */}
+        <div className="w-full md:w-1/4 bg-white rounded-xl shadow-lg border border-gray-200 p-6 h-fit">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Recently Analyzed</h2>
+          {recentSites.length === 0 ? (
+            <p className="text-gray-500 text-sm">No sites analyzed yet</p>
+          ) : (
+            <ul className="space-y-3">
+              {recentSites.map((site, index) => (
+                <li 
+                  key={index} 
+                  className="cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                  onClick={() => handleSiteClick(site)}
+                >
+                  <div className="font-medium text-gray-900 truncate">{site.url}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {site.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
-                Website URL
-              </label>
-              <input
-                type="text"
-                id="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="example.com or https://example.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-600"
-              />
-            </div>
-            
-            {error && (
-              <div className="text-red-500 text-sm py-2">
-                {error}
+        {/* Main Content */}
+        <div className="w-full md:w-3/4">
+          <div className="text-center mb-10">
+            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-3">
+              Web Page Classifier
+            </h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Enter a URL below to analyze and classify its content using AI
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
+                  Website URL
+                </label>
+                <input
+                  type="text"
+                  id="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="example.com or https://example.com"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-600"
+                />
               </div>
-            )}
-            
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition ${
-                loading 
-                  ? 'bg-blue-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Analyzing...
-                </span>
-              ) : (
-                'Classify Page'
+              
+              {error && (
+                <div className="text-red-500 text-sm py-2">
+                  {error}
+                </div>
               )}
-            </button>
-          </form>
-        </div>
-
-        {result && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Classification Results</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                  <h3 className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Classification</h3>
-                  <p className="text-lg font-bold text-gray-900">{result.classification}</p>
-                </div>
-                
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <h3 className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-1">Confidence</h3>
-                  <p className="text-lg font-bold text-gray-900">{result.confidence}%</p>
-                </div>
-                
-                <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
-                  <h3 className="text-xs font-semibold text-purple-800 uppercase tracking-wide mb-1">Factors</h3>
-                  <p className="text-lg font-bold text-gray-900">{result.factors ? result.factors.length : 0}</p>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Factors</h3>
-                {result.factors ? (
-                  <ul className="space-y-2">
-                    {result.factors.map((factor: string, index: number) => (
-                      <li key={index} className="flex items-start">
-                        <span className="flex-shrink-0 h-4 w-4 text-blue-500 mt-0.5">•</span>
-                        <p className="ml-2 text-gray-700 text-sm">{factor}</p>
-                      </li>
-                    ))}
-                  </ul>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition ${
+                  loading 
+                    ? 'bg-blue-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Analyzing...
+                  </span>
                 ) : (
-                  <p className="text-gray-500">No factors available</p>
+                  'Classify Page'
                 )}
-              </div>
-              
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-500">
-                  Analysis performed on: {new Date().toLocaleDateString()}
-                </p>
+              </button>
+            </form>
+          </div>
+
+          {result && (
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Classification Results</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                    <h3 className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Classification</h3>
+                    <p className="text-lg font-bold text-gray-900">{result.classification}</p>
+                  </div>
+                  
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                    <h3 className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-1">Confidence</h3>
+                    <p className="text-lg font-bold text-gray-900">{result.confidence}%</p>
+                  </div>
+                  
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                    <h3 className="text-xs font-semibold text-purple-800 uppercase tracking-wide mb-1">Factors</h3>
+                    <p className="text-lg font-bold text-gray-900">{result.factors ? result.factors.length : 0}</p>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Factors</h3>
+                  {result.factors ? (
+                    <ul className="space-y-2">
+                      {result.factors.map((factor: string, index: number) => (
+                        <li key={index} className="flex items-start">
+                          <span className="flex-shrink-0 h-4 w-4 text-blue-500 mt-0.5">•</span>
+                          <p className="ml-2 text-gray-700 text-sm">{factor}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500">No factors available</p>
+                  )}
+                </div>
+                
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500">
+                    Analysis performed on: {new Date().toLocaleDateString()}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Debug section - hidden by default, shown when chevron is clicked */}
-        {result && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mt-6">
-            <button
-              onClick={() => setShowDebug(!showDebug)}
-              className="flex items-center text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            >
-              <svg 
-                className={`w-5 h-5 transition-transform duration-200 ${showDebug ? 'rotate-180' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24" 
-                xmlns="http://www.w3.org/2000/svg"
+          {/* Debug section - hidden by default, shown when chevron is clicked */}
+          {result && (
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mt-6">
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                className="flex items-center text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-              <span className="ml-2 text-sm font-medium">Show debug information</span>
-            </button>
-            
-            {showDebug && (
-              <div className="mt-4 space-y-6 border-t border-gray-200 pt-6">
-                {/* LLM Stats Table */}
-                {llmStats && (
+                <svg 
+                  className={`w-5 h-5 transition-transform duration-200 ${showDebug ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+                <span className="ml-2 text-sm font-medium">Show debug information</span>
+              </button>
+              
+              {showDebug && (
+                <div className="mt-4 space-y-6 border-t border-gray-200 pt-6">
+                  {/* LLM Stats Table */}
+                  {llmStats && (
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Statistics</h3>
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            <tr>
+                              <td className="px-4 py-2 text-sm font-medium text-gray-900">Model</td>
+                              <td className="px-4 py-2 text-sm text-gray-700">{llmStats.model}</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-2 text-sm font-medium text-gray-900">Response Time</td>
+                              <td className="px-4 py-2 text-sm text-gray-700">{llmStats.responseTime}</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-2 text-sm font-medium text-gray-900">Prompt Tokens</td>
+                              <td className="px-4 py-2 text-sm text-gray-700">{llmStats.promptTokens}</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-2 text-sm font-medium text-gray-900">Completion Tokens</td>
+                              <td className="px-4 py-2 text-sm text-gray-700">{llmStats.reasoningTokens}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Statistics</h3>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          <tr>
-                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Model</td>
-                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.model}</td>
-                          </tr>
-                          <tr>
-                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Response Time</td>
-                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.responseTime}</td>
-                          </tr>
-                          <tr>
-                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Prompt Tokens</td>
-                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.promptTokens}</td>
-                          </tr>
-                          <tr>
-                            <td className="px-4 py-2 text-sm font-medium text-gray-900">Completion Tokens</td>
-                            <td className="px-4 py-2 text-sm text-gray-700">{llmStats.reasoningTokens}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Prompt sent to LLM:</h3>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                      <pre className="text-sm text-gray-800 whitespace-pre-wrap">{extractedText}</pre>
                     </div>
                   </div>
-                )}
-                
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Prompt sent to LLM:</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
-                    <pre className="text-sm text-gray-800 whitespace-pre-wrap">{extractedText}</pre>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Response:</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
-                    <ReactMarkdown className="text-sm text-gray-800">
-                      {llmResponse}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-                
-                {metaData && Object.keys(metaData).length > 0 && (
+                  
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Meta Data Extracted:</h3>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <pre className="text-sm text-gray-800">
-                        {JSON.stringify(metaData, null, 2)}
-                      </pre>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">LLM Response:</h3>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                      <ReactMarkdown className="text-sm text-gray-800">
+                        {llmResponse}
+                      </ReactMarkdown>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                  
+                  {metaData && Object.keys(metaData).length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Meta Data Extracted:</h3>
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <pre className="text-sm text-gray-800">
+                          {JSON.stringify(metaData, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
