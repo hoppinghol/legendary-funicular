@@ -221,6 +221,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching URL or calling LLM:', error);
-    return NextResponse.json({ error: 'Failed to process URL or classify content' }, { status: 500 });
+    
+    // Return error response instead of mock data
+    return NextResponse.json({ 
+      error: `Failed to retrieve page content: ${error.message || 'Unknown error'}` 
+    }, { status: 500 });
   }
 }
