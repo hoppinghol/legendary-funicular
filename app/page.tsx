@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
@@ -73,7 +73,10 @@ export default function Home() {
       }
 
       // Use the classification result from Novita API
-      setResult(data.classificationResult);
+      // Move this to a useEffect to avoid rendering issues
+      setTimeout(() => {
+        setResult(data.classificationResult);
+      }, 0);
     } catch (err) {
       setError('Failed to analyze the page. Please try again.');
       console.error(err);
