@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   const [url, setUrl] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [debugMode, setDebugMode] = useState(false);
+  const [extractedText, setExtractedText] = useState('');
+  const [metaData, setMetaData] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +21,8 @@ export default function Home() {
     setLoading(true);
     setError('');
     setResult(null);
+    setExtractedText('');
+    setMetaData(null);
 
     try {
       // Prepend https:// if not present
@@ -30,22 +35,67 @@ export default function Home() {
       // In a real implementation, this would involve:
       // 1. Making a server-side request to fetch the URL content
       // 2. Extracting the text content from the HTML
-      // 3. Sending that content to the Novita API
+      // 3. Extracting meta data
+      // 4. Sending that content to the Novita API
       
       // For demo purposes, we'll simulate the downloaded content
-      const mockContent = `
+      const mockHtmlContent = `
+        <!DOCTYPE html>
         <html>
-        <head><title>Sample Page</title></head>
+        <head>
+          <title>Sample Technology Blog</title>
+          <meta name="description" content="A blog about technology, AI, and software development">
+          <meta name="keywords" content="AI, machine learning, programming, software">
+          <meta name="author" content="Tech Writer">
+          <meta property="og:title" content="Technology Blog">
+          <meta property="og:description" content="Exploring the latest in technology and software development">
+          <meta property="og:url" content="${fullUrl}">
+        </head>
         <body>
           <h1>Welcome to our Technology Blog</h1>
           <p>This page discusses artificial intelligence, machine learning, and software development.</p>
           <p>We cover topics like neural networks, deep learning algorithms, and programming frameworks.</p>
           <p>Our articles are written by experts in the field of computer science and technology.</p>
+          <div class="content">
+            <h2>Latest Articles</h2>
+            <p>Recent developments in AI research include breakthroughs in natural language processing.</p>
+            <p>Software engineers are increasingly adopting agile methodologies for faster development cycles.</p>
+          </div>
         </body>
         </html>
       `;
 
-      // In a real implementation, you would send mockContent to Novita API
+      // Extract text content from HTML (simplified approach)
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = mockHtmlContent;
+      
+      // Remove script and style elements
+      tempDiv.querySelectorAll('script, style').forEach(el => el.remove());
+      
+      // Get text content
+      const textContent = tempDiv.textContent || tempDiv.innerText || '';
+      
+      // Extract meta data
+      const metaTags: any = {};
+      const metaElements = tempDiv.querySelectorAll('meta');
+      metaElements.forEach(element => {
+        const name = element.getAttribute('name') || element.getAttribute('property');
+        const content = element.getAttribute('content');
+        if (name && content) {
+          metaTags[name] = content;
+        }
+      });
+      
+      // Clean up extracted text
+      const cleanedText = textContent
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 2000); // Limit to 2000 characters
+      
+      setExtractedText(cleanedText);
+      setMetaData(metaTags);
+
+      // In a real implementation, you would send cleanedText to Novita API
       // For now, we'll simulate the API response
       const mockResponse = {
         classification: "Technology",
@@ -128,7 +178,7 @@ export default function Home() {
         </div>
 
         {result && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
             <div className="p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Classification Results</h2>
               
@@ -169,6 +219,44 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* Debug section */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+          <div className="flex items-center mb-4">
+            <input
+              type="checkbox"
+              id="debugMode"
+              checked={debugMode}
+              onChange={(e) => setDebugMode(e.target.checked)}
+              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="debugMode" className="text-sm font-medium text-gray-700">
+              Show debug information
+            </label>
+          </div>
+          
+          {debugMode && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Text to be submitted to LLM:</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                  <pre className="text-sm text-gray-800 whitespace-pre-wrap">{extractedText}</pre>
+                </div>
+              </div>
+              
+              {metaData && Object.keys(metaData).length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Meta Data Extracted:</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <pre className="text-sm text-gray-800">
+                      {JSON.stringify(metaData, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
